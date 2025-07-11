@@ -53,7 +53,7 @@ public class AclAuthorizationHandler implements Handler<DefaultAuthorizationCont
 
     @Override
     public CompletableFuture<Void> handle(DefaultAuthorizationContext context,
-        HandlerChain<DefaultAuthorizationContext, CompletableFuture<Void>> chain) {
+                                          HandlerChain<DefaultAuthorizationContext, CompletableFuture<Void>> chain) {
         if (this.authorizationMetadataProvider == null) {
             throw new AuthorizationException("The authorizationMetadataProvider is not configured");
         }
@@ -112,10 +112,10 @@ public class AclAuthorizationHandler implements Handler<DefaultAuthorizationCont
             return null;
         }
         return entries.stream()
-            .filter(entry -> entry.isMatchResource(context.getResource()))
-            .filter(entry -> entry.isMatchAction(context.getActions()))
-            .filter(entry -> entry.isMatchEnvironment(Environment.of(context.getSourceIp())))
-            .collect(Collectors.toList());
+                .filter(entry -> entry.isMatchResource(context.getResource()))
+                .filter(entry -> entry.isMatchAction(context.getActions()))
+                .filter(entry -> entry.isMatchEnvironment(Environment.of(context.getSourceIp())))
+                .collect(Collectors.toList());
     }
 
     private int comparePolicyEntries(PolicyEntry o1, PolicyEntry o2) {
@@ -133,20 +133,17 @@ public class AclAuthorizationHandler implements Handler<DefaultAuthorizationCont
             if (r1.getResourcePattern() == ResourcePattern.PREFIXED) {
                 String n1 = r1.getResourceName();
                 String n2 = r2.getResourceName();
-                compare = Integer.compare(n1.length(), n2.length());
+                compare = -1 * Integer.compare(n1.length(), n2.length());
             }
         } else {
             if (r1.getResourcePattern() == ResourcePattern.LITERAL) {
-                compare = 1;
-            }
-            if (r1.getResourcePattern() == ResourcePattern.LITERAL) {
                 compare = -1;
-            }
-            if (r1.getResourcePattern() == ResourcePattern.PREFIXED) {
+            } else if (r2.getResourcePattern() == ResourcePattern.LITERAL) {
                 compare = 1;
-            }
-            if (r1.getResourcePattern() == ResourcePattern.PREFIXED) {
+            } else if (r1.getResourcePattern() == ResourcePattern.PREFIXED) {
                 compare = -1;
+            } else if (r2.getResourcePattern() == ResourcePattern.PREFIXED) {
+                compare = 1;
             }
         }
 
@@ -162,6 +159,6 @@ public class AclAuthorizationHandler implements Handler<DefaultAuthorizationCont
 
     private static void throwException(DefaultAuthorizationContext context, String detail) {
         throw new AuthorizationException("{} has no permission to access {} from {}, " + detail,
-            context.getSubject().getSubjectKey(), context.getResource().getResourceKey(), context.getSourceIp());
+                context.getSubject().getSubjectKey(), context.getResource().getResourceKey(), context.getSourceIp());
     }
 }
