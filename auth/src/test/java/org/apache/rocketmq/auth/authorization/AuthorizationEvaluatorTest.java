@@ -24,7 +24,6 @@ import org.apache.rocketmq.auth.authentication.factory.AuthenticationFactory;
 import org.apache.rocketmq.auth.authentication.manager.AuthenticationMetadataManager;
 import org.apache.rocketmq.auth.authentication.model.Subject;
 import org.apache.rocketmq.auth.authentication.model.User;
-import org.apache.rocketmq.auth.authorization.chain.AclAuthorizationHandler;
 import org.apache.rocketmq.auth.authorization.context.AuthorizationContext;
 import org.apache.rocketmq.auth.authorization.context.DefaultAuthorizationContext;
 import org.apache.rocketmq.auth.authorization.enums.Decision;
@@ -311,7 +310,6 @@ public class AuthorizationEvaluatorTest {
 
         Acl acl = AuthTestHelper.buildAcl("User:test", "Topic:test*", "Pub", "192.168.0.0/24", Decision.DENY);
         this.authorizationMetadataManager.createAcl(acl).join();
-
 
         Assert.assertThrows(AuthorizationException.class, () -> {
             Subject subject = Subject.of("User:test");
