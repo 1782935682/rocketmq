@@ -17,6 +17,8 @@
 package org.apache.rocketmq.broker.subscription;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,9 +29,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
-
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,11 +51,9 @@ import org.apache.rocketmq.store.config.BrokerRole;
 public class SubscriptionGroupManager extends ConfigManager {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    protected ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
-        new ConcurrentHashMap<>(1024);
+    protected ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable = new ConcurrentHashMap<>(1024);
 
-    private ConcurrentMap<String, ConcurrentMap<String, Integer>> forbiddenTable =
-        new ConcurrentHashMap<>(4);
+    private ConcurrentMap<String, ConcurrentMap<String, Integer>> forbiddenTable = new ConcurrentHashMap<>(4);
 
     protected final DataVersion dataVersion = new DataVersion();
     protected transient BrokerController brokerController;
@@ -135,7 +132,8 @@ public class SubscriptionGroupManager extends ConfigManager {
         return this.subscriptionGroupTable.put(subscriptionGroupConfig.getGroupName(), subscriptionGroupConfig);
     }
 
-    protected SubscriptionGroupConfig putSubscriptionGroupConfigIfAbsent(SubscriptionGroupConfig subscriptionGroupConfig) {
+    protected SubscriptionGroupConfig putSubscriptionGroupConfigIfAbsent(
+        SubscriptionGroupConfig subscriptionGroupConfig) {
         return this.subscriptionGroupTable.putIfAbsent(subscriptionGroupConfig.getGroupName(), subscriptionGroupConfig);
     }
 
@@ -157,12 +155,8 @@ public class SubscriptionGroupManager extends ConfigManager {
         Map<String, String> currentAttributes = current(config.getGroupName());
 
         Map<String, String> finalAttributes = newAttributes;
-        if(this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE){
-            finalAttributes = AttributeUtil.alterCurrentAttributes(
-                this.subscriptionGroupTable.get(config.getGroupName()) == null,
-                SubscriptionGroupAttributes.ALL,
-                ImmutableMap.copyOf(currentAttributes),
-                ImmutableMap.copyOf(newAttributes));
+        if (this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
+            finalAttributes = AttributeUtil.alterCurrentAttributes(this.subscriptionGroupTable.get(config.getGroupName()) == null, SubscriptionGroupAttributes.ALL, ImmutableMap.copyOf(currentAttributes), ImmutableMap.copyOf(newAttributes));
         }
 
         config.setAttributes(finalAttributes);
@@ -272,8 +266,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
         SubscriptionGroupConfig subscriptionGroupConfig = getSubscriptionGroupConfig(group);
         if (null == subscriptionGroupConfig) {
-            if (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup()
-                    || MixAll.isSysConsumerGroupAndEnableCreate(group, brokerController.getBrokerConfig().isEnableCreateSysGroup())) {
+            if (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() || MixAll.isSysConsumerGroupAndEnableCreate(group, brokerController.getBrokerConfig().isEnableCreateSysGroup())) {
                 if (group.length() > Validators.CHARACTER_MAX_LENGTH || TopicValidator.isTopicOrGroupIllegal(group)) {
                     return null;
                 }
@@ -298,8 +291,7 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig()
-            .getStorePathRootDir());
+        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override
@@ -340,8 +332,7 @@ public class SubscriptionGroupManager extends ConfigManager {
         int beginIndex = groupSeq;
         if (StringUtils.isBlank(dataVersion) || !Objects.equals(DataVersion.fromJson(dataVersion, DataVersion.class), this.dataVersion)) {
             beginIndex = 0;
-            log.info("get sub subscription group table from {} due to {}", beginIndex,
-                StringUtils.isBlank(dataVersion) ? "DataVersion Empty" : "DataVersion Changed");
+            log.info("get sub subscription group table from {} due to {}", beginIndex, StringUtils.isBlank(dataVersion) ? "DataVersion Empty" : "DataVersion Changed");
         }
 
         ConcurrentHashMap<String, SubscriptionGroupConfig> subGroupTable = new ConcurrentHashMap<>();
@@ -349,8 +340,7 @@ public class SubscriptionGroupManager extends ConfigManager {
             int endIndex = Math.min(beginIndex + maxGroupNum, subscriptionGroupTable.size());
 
             ImmutableSortedMap<String, SubscriptionGroupConfig> sortedMap = ImmutableSortedMap.copyOf(subscriptionGroupTable);
-            subGroupTable.putAll(sortedMap.subMap(sortedMap.keySet().asList().get(beginIndex),true,
-                sortedMap.keySet().asList().get(endIndex - 1),true));
+            subGroupTable.putAll(sortedMap.subMap(sortedMap.keySet().asList().get(beginIndex), true, sortedMap.keySet().asList().get(endIndex - 1), true));
         }
 
         return subGroupTable;
@@ -365,13 +355,10 @@ public class SubscriptionGroupManager extends ConfigManager {
             return Maps.newConcurrentMap();
         }
 
-        return forbiddenTable.entrySet().stream()
-            .filter(e -> groupSet.contains(e.getKey()))
-            .collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue));
+        return forbiddenTable.entrySet().stream().filter(e -> groupSet.contains(e.getKey())).collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public void setForbiddenTable(
-        ConcurrentMap<String, ConcurrentMap<String, Integer>> forbiddenTable) {
+    public void setForbiddenTable(ConcurrentMap<String, ConcurrentMap<String, Integer>> forbiddenTable) {
         this.forbiddenTable = forbiddenTable;
     }
 
@@ -410,7 +397,6 @@ public class SubscriptionGroupManager extends ConfigManager {
             log.warn("delete subscription group failed, subscription groupName: {} not exist", groupName);
         }
     }
-
 
     public void setSubscriptionGroupTable(ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable) {
         this.subscriptionGroupTable = subscriptionGroupTable;
